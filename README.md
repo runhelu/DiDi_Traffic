@@ -2,6 +2,6 @@
 
 ## Baidu Key
 
-Apply at [console](http://lbsyun.baidu.com/). Fill the AK and SK into baidu_ak file.
+Apply at [console](http://lbsyun.baidu.com/). Be sure to make IP checking as 0.0.0.0/0
 
 ## WIP
