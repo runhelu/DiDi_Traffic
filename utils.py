@@ -50,11 +50,13 @@ def generate_pickle(start=0, limit=None):
 
 def convert_lat(lat):
     # type: (float) -> float
+    # TODO: remap latitude to visualible metric on the map
     return float(lat)
 
 
 def convert_long(long):
     # type: (float) -> float
+    # TODO: remap longtitude to visualible metric on the map
     return float(long)
 
 
