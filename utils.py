@@ -13,9 +13,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def categorize(all_data):
-    # type: (pd.DataFrame) -> dict
-    info = defaultdict(lambda: defaultdict(list))
+def categorize(info, all_data):
+    # type: (dict, pd.DataFrame) -> dict
     columns = ['driverID', 'orderID', 'time', 'lat', 'long']
     for _, p in all_data.iterrows():
         info[p['driverID']][p['orderID']].append({
@@ -27,23 +26,29 @@ def categorize(all_data):
                 info[driverID][orderID],
                 key=lambda t: t['time']
             )
-    return dict(info)
+    return info
 
 
 def generate_pickle(start=0, limit=None):
-    data = pd.read_csv(
-        "gps_20161101",
-        names=[
-            "driverID",
-            "orderID",
-            "time",
-            "lat",
-            "long"],
-        skiprows=start,
-        nrows=limit
-    )
-    info = categorize(data)
-    with open('info.pickle', 'w+') as f:
+    info = defaultdict(lambda: defaultdict(list))
+    for i in range(1000):
+        limit = 1000
+        if i % 10 == 0:
+            print("Progress: {}/{}".format(i * limit, 1000 * limit))
+        data = pd.read_csv(
+            "gps_20161101",
+            names=[
+                "driverID",
+                "orderID",
+                "time",
+                "lat",
+                "long"],
+            skiprows=start + i * limit,
+            nrows=limit
+        )
+        info = categorize(info, data)
+    info = dict(info)
+    with open('info.pickle', 'wb') as f:
         pickle.dump(info, f)
     return info
 
@@ -84,15 +89,22 @@ def seperate_road(info, driver_id, order_id):
         return np.arccos(
             np.dot([x1, y1], [x2, y2]) / np.sqrt(x1 ** 2 + y1 ** 2) / np.sqrt(x2 ** 2 + y2 ** 2)
         ) * 180.0 / np.pi
+
     seq = info[driver_id][order_id]
     result = [('start', 0, seq[0]['lat'], seq[0]['long'])]
+    if len(seq) == 1:
+        result.append(
+            ('stop', len(seq) - 1, seq[-1]['lat'], seq[-1]['long'])
+        )
+        return result
+
     ddx = seq[1]['lat'] - seq[0]['lat']
     ddy = seq[1]['long'] - seq[0]['long']
     for i in range(2, len(seq)):
         dx = seq[i]['lat'] - seq[i - 1]['lat']
         dy = seq[i]['long'] - seq[i - 1]['long']
         ang = get_angle(ddx, ddy, dx, dy)
-        if ang < 150:
+        if ang > 30:
             result.append(
                 ('stop', i - 1, seq[i - 1]['lat'], seq[i - 1]['long']),
             )
@@ -111,16 +123,16 @@ def request_info(long, lat):
     # type: (float, float) -> (bool, str)
     with open('baidu_ak') as f:
         ak = f.readline().strip()
-    if 34.256816 <= long <= 34.282591 and 108.929953 <= lat <= 108.978677:
-        location = '{},{}'.format(long, lat)
-        url = "http://api.map.baidu.com/geocoder/v2/?location={}&output=json&language=en&ak={}".format(
-            location, ak
-        )
-        resp = requests.get(url).json()
-        if resp['status'] != 0:
-            return False, ''
-        street = str(resp['result']['addressComponent']['street'])
-        return True, street
+    # if 34.256816 <= long <= 34.282591 and 108.929953 <= lat <= 108.978677:
+    location = '{},{}'.format(long, lat)
+    url = "http://api.map.baidu.com/geocoder/v2/?location={}&output=json&language=en&ak={}".format(
+        location, ak
+    )
+    resp = requests.get(url).json()
+    if resp['status'] != 0:
+        return False, ''
+    street = str(resp['result']['addressComponent']['street'])
+    return True, street
 
 
 def assign_street_name(info, driver_id, order_id, sep):
@@ -176,11 +188,13 @@ def collect_street(info):
 
 if __name__ == "__main__":
     if os.path.exists("./info.pickle"):
-        with open('info.pickle') as f:
+        with open('info.pickle', 'rb') as f:
             info = pickle.load(f)
     else:
         info = generate_pickle()
     collect_street(info)
+    with open('info-street.pickle', 'wb') as f:
+        pickle.dump(info, f)
     import ipdb
     ipdb.set_trace()
 

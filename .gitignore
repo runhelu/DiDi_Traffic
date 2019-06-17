@@ -3,5 +3,5 @@
 .vscode
 gps_20161101
 baidu_ak
-cache*.csv
+# cache*.csv
 info.pickle
