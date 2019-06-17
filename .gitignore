@@ -1,4 +1,7 @@
 .ipynb_checkpoints
+.idea
+.vscode
 gps_20161101
 baidu_ak
 cache*.csv
+info.pickle
