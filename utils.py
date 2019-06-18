@@ -13,9 +13,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def categorize(info, all_data):
+def categorize(info, all_data, with_street=False):
     # type: (dict, pd.DataFrame) -> dict
     columns = ['driverID', 'orderID', 'time', 'lat', 'long']
+    if with_street:
+        columns.append('street')
     for _, p in all_data.iterrows():
         info[p['driverID']][p['orderID']].append({
             k: p[k] for k in columns
@@ -31,7 +33,7 @@ def categorize(info, all_data):
 
 def generate_pickle(start=0, limit=None):
     info = defaultdict(lambda: defaultdict(list))
-    for i in range(1000):
+    for i in range(100):
         limit = 1000
         if i % 10 == 0:
             print("Progress: {}/{}".format(i * limit, 1000 * limit))
@@ -49,6 +51,39 @@ def generate_pickle(start=0, limit=None):
         info = categorize(info, data)
     info = dict(info)
     with open('info.pickle', 'wb') as f:
+        pickle.dump(info, f)
+    return info
+
+
+def generate_cache_pickle(start=0, limit=None):
+    info = defaultdict(lambda: defaultdict(list))
+    names = [
+        (0, 10000),
+        (10000, 30000),
+        (30000, 40000),
+        (40000, 50000),
+        (50000, 60000),
+        (60000, 70000),
+        (70000, 80000),
+        (80000, 90000),
+        (90000, 100000),
+    ]
+    for i in range(len(names)):
+        print("Progress: {}/{}".format(names[i][0], 100000))
+        data = pd.read_csv(
+            "cache_{}_{}.csv".format(names[i][0], names[i][1]),
+            names=[
+                "driverID",
+                "orderID",
+                "time",
+                "lat",
+                "long",
+                'street'],
+            sep=' '
+        )
+        info = categorize(info, data, with_street=True)
+    info = dict(info)
+    with open('cache.pickle', 'wb') as f:
         pickle.dump(info, f)
     return info
 
@@ -128,7 +163,13 @@ def request_info(long, lat):
     url = "http://api.map.baidu.com/geocoder/v2/?location={}&output=json&language=en&ak={}".format(
         location, ak
     )
-    resp = requests.get(url).json()
+    succ = False
+    while not succ:
+        try:
+            resp = requests.get(url).json()
+            succ = True
+        except:
+            pass
     if resp['status'] != 0:
         return False, ''
     street = str(resp['result']['addressComponent']['street'])
@@ -139,7 +180,7 @@ def assign_street_name(info, driver_id, order_id, sep):
     for i in range(len(sep) // 2):
         start = sep[i * 2]
         stop = sep[i * 2 + 1]
-        midpoint = ((start[2] + stop[2]) / 2, (start[3] + stop[3]) / 2)
+        midpoint = ((start[3] + stop[3]) / 2, (start[2] + stop[2]) / 2)
         success, street = request_info(midpoint[0], midpoint[1])
         if not success:
             continue
@@ -158,7 +199,7 @@ def build_adjacent_matrix(info):
                 streets.add(t['street'])
                 if t['street'] != last_street:
                     if last_street != '':
-                        transitions.append(
+                        transitions.add(
                             tuple(sorted([
                                       last_street,
                                       t['street']
@@ -179,22 +220,80 @@ def build_adjacent_matrix(info):
 
 
 def collect_street(info):
+    tot = 0
     for did in info.keys():
         for oid in info[did].keys():
+            tot += 1
+            if tot % 50 == 0:
+                print(tot)
             sep = seperate_road(info, did, oid)
             assign_street_name(info, did, oid, sep)
     return build_adjacent_matrix(info)
 
 
-if __name__ == "__main__":
+def calculate_angle_diff(info, driver_id, order_id):
+    # type: (dict, str, str) -> list
+    def get_angle(x1, y1, x2, y2):
+        return np.arccos(
+            np.dot([x1, y1], [x2, y2]) / np.sqrt(x1 ** 2 + y1 ** 2) / np.sqrt(x2 ** 2 + y2 ** 2)
+        ) * 180.0 / np.pi
+
+    seq = info[driver_id][order_id]
+    result = []
+    non_result = []
+    if len(seq) == 1:
+        return result, non_result
+
+    ddx = seq[1]['lat'] - seq[0]['lat']
+    ddy = seq[1]['long'] - seq[0]['long']
+    for i in range(2, len(seq)):
+        dx = seq[i]['lat'] - seq[i - 1]['lat']
+        dy = seq[i]['long'] - seq[i - 1]['long']
+        ang = get_angle(ddx, ddy, dx, dy)
+        if seq[i]['street'] != seq[i - 1]['street']:
+            result.append(ang)
+        else:
+            non_result.append(ang)
+        ddx = dx
+        ddy = dy
+    return result, non_result
+
+
+def decide_angle(info):
+    all = []
+    non_all = []
+    for did in info.keys():
+        for oid in info[did].keys():
+            ang, non_ang = calculate_angle_diff(info, did, oid)
+            if ang:
+                all += ang
+                print(did, oid, 'ang', np.nanmean(ang))
+            if non_ang:
+                non_all += non_ang
+                print(did, oid, 'non ang', np.nanmean(non_ang))
+    print('all', np.nanmean(all))
+    print('non all', np.nanmean(non_all))
+
+
+def load_info_pickle():
     if os.path.exists("./info.pickle"):
         with open('info.pickle', 'rb') as f:
             info = pickle.load(f)
     else:
         info = generate_pickle()
-    collect_street(info)
-    with open('info-street.pickle', 'wb') as f:
-        pickle.dump(info, f)
-    import ipdb
-    ipdb.set_trace()
+    return info
+
+
+def load_cache_pickle():
+    if os.path.exists("./cache.pickle"):
+        with open('cache.pickle', 'rb') as f:
+            info = pickle.load(f)
+    else:
+        info = generate_cache_pickle()
+    return info
+
+
+if __name__ == "__main__":
+    info = load_cache_pickle()
+    decide_angle(info)
 
