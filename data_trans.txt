@@ -1,0 +1,7 @@
+1. STGCN
+    - Weighted adjacent matrix (N_node x N_node) - 01 matrix ?
+    - Average speed per timeseq (D x N_node) - linear and other interpolation ?
+
+2. T-GCN
+    - Weighted adjacent matrix (N_node x N_node) - can be 01 matrix
+    - Average speed per timeseq ((N_node + 1) x D) - first-line be number of time_len
