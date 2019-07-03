@@ -1,0 +1,6 @@
+[submodule "STGCN"]
+	path = STGCN
+	url = https://github.com/Davidham3/STGCN
+[submodule "T-GCN"]
+	path = T-GCN
+	url = https://github.com/lehaifeng/T-GCN

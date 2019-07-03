@@ -1,4 +1,5 @@
 import os
+from utils import filter_name
 
 
 def write_init_adj_mat():
@@ -23,16 +24,6 @@ def write_init_adj_mat():
 
 
 def read_adj_mat():
-    def filter_name(s):
-        if s.startswith('二环路沿线商业经济带'):
-            s = s.replace('二环路沿线商业经济带', '')
-        if s.endswith('辅路'):
-            s = s.replace('辅路', '')
-        for p in '东西南北':
-            if s.endswith('{}段'.format(p)):
-                s = s.replace('{}段'.format(p), '')
-        return s
-
     streets = set()
     transitions = set()
     with open('./adj_matrix.csv', encoding="utf-8") as f:
