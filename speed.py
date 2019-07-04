@@ -37,7 +37,7 @@ def fill_missing_speed(intervals, n_slice):
         all_value = []
         for i in range(n_slice):
             if intervals[street][i]:
-                mean_speed[street][i] = np.mean([np.mean(l) for l in intervals[street][i].values()])
+                mean_speed[street][i] = np.nanmean([np.mean(l) for l in intervals[street][i].values()])
                 all_value.append(mean_speed[street][i])
             else:
                 missing_idx.append(i)
