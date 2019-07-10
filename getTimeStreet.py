@@ -4,7 +4,7 @@ import sys
 import os
 
 timeStreetMap = dict()
-with open("cache_0_10000.csv", "r", encoding="utf-8") as f:
+with open("./dataset/cache_0_10000.csv", "r", encoding="utf-8") as f:
     for line in f.readlines():
         line = line.strip()
         line = line.split(" ")
@@ -19,7 +19,7 @@ with open("cache_0_10000.csv", "r", encoding="utf-8") as f:
             timeStreetMap[time].append(street)
 f.close()
 
-with open("cache_10000_30000.csv", "r", encoding="utf-8") as f:
+with open("./dataset/cache_10000_30000.csv", "r", encoding="utf-8") as f:
     for line in f.readlines():
         line = line.strip()
         line = line.split(" ")
@@ -79,10 +79,10 @@ for singleTuple in sortedTuples:
 
 sortedTuples = sorted(minMap.items(),key=lambda x:x[0])
 
-if(os.path.exists("timeStreet.csv")):
-    os.remove("timeStreet.csv")
+if(os.path.exists("./dataset/timeStreet.csv")):
+    os.remove("./dataset/timeStreet.csv")
     
-with open("timeStreet.csv", "a+", encoding="utf-8") as f:
+with open("./dataset/timeStreet.csv", "a+", encoding="utf-8") as f:
     for singleTuple in sortedTuples:
         key = singleTuple[0]
         string = str(key)

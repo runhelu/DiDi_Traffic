@@ -4,7 +4,7 @@ from utils import filter_name
 
 def write_init_adj_mat():
     streets = set()
-    with open("timeStreet.csv", "r", encoding="utf-8") as f:
+    with open("./dataset/timeStreet.csv", "r", encoding="utf-8") as f:
         for line in f.readlines():
             line = line.strip()
             line = line.split(" ")
@@ -14,10 +14,10 @@ def write_init_adj_mat():
                 streets.add(street)
 
     # Init
-    if os.path.exists("adj_matrix.csv"):
-        os.remove("adj_matrix.csv")
+    if os.path.exists("./dataset/adj_matrix.csv"):
+        os.remove("./dataset/adj_matrix.csv")
 
-    with open("adj_matrix.csv", "a+", encoding="utf-8") as f:
+    with open("./dataset/adj_matrix.csv", "a+", encoding="utf-8") as f:
         for key in streets:
             s = key + '\n'
             f.write(s)
@@ -26,7 +26,7 @@ def write_init_adj_mat():
 def read_adj_mat():
     streets = set()
     transitions = set()
-    with open('./adj_matrix.csv', encoding="utf-8") as f:
+    with open('./dataset/adj_matrix.csv', encoding="utf-8") as f:
         for line in f:
             names = line.strip().split(' ')
             if names[0] == '':

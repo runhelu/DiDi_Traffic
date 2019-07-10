@@ -4,11 +4,11 @@ from collections import defaultdict
 from math import floor
 from gen_pickle import load_street_pickle, load_driver_pickle
 from utils import gcj2wgs, haversine_distance, vincenty_distance
+from adj_mat import read_adj_mat
+from pandas import read_csv
 
 
-def estimate_speed(interval=600):
-    info = load_street_pickle()
-    driver = load_driver_pickle()
+def estimate_speed(info, driver, interval=600):
     start_time = min([l[0]['time'] for l in info.values()])
     end_time = max([l[-1]['time'] for l in info.values()])
     n_slice = floor((end_time - start_time) / interval) + 1
@@ -42,14 +42,26 @@ def fill_missing_speed(intervals, n_slice):
             else:
                 missing_idx.append(i)
         for i in missing_idx:
-            # alternatives: interpolation
+            # TODO: alternatives: interpolation
             mean_speed[street][i] = np.mean(all_value)
     return mean_speed, n_slice
 
 
 def read_speed():
-    intervals, n = estimate_speed()
+    info = load_street_pickle()
+    driver = load_driver_pickle()
+    intervals, n = estimate_speed(info, driver)
     speed, n = fill_missing_speed(intervals, n)
+    return speed, n
+
+
+def read_pred_speed():
+    streets, _ = read_adj_mat()
+    data = np.asarray(read_csv('./dataset/pred_speed.csv', header=None))
+    speed = {}
+    n = data.shape[0] // 3
+    for i in range(data.shape[1]):
+        speed[streets[i]] = data[:, i][::3]
     return speed, n
 
 

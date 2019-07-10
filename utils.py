@@ -90,10 +90,15 @@ def filter_name(s):
     return s
 
 
-def request_info(long, lat):
-    # type: (float, float) -> (bool, str)
+def load_baidu_ak():
     with open('baidu_ak') as f:
         ak = f.readline().strip()
+    return ak
+
+
+def request_info(long, lat):
+    # type: (float, float) -> (bool, str)
+    ak = load_baidu_ak()
     # if 34.256816 <= long <= 34.282591 and 108.929953 <= lat <= 108.978677:
     location = '{},{}'.format(long, lat)
     url = "http://api.map.baidu.com/geocoder/v2/?location={}&output=json&language=en&ak={}".format(

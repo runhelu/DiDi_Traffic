@@ -28,7 +28,7 @@ def read_cache_csv():
     for i in range(len(names)):
         print("Progress: {}/{}".format(names[i][0], 100000))
         data = pd.read_csv(
-            "cache_{}_{}.csv".format(names[i][0], names[i][1]),
+            "./dataset/cache_{}_{}.csv".format(names[i][0], names[i][1]),
             names=[
                 "driverID",
                 "orderID",
@@ -84,7 +84,7 @@ def generate_info_pickle(start=0, limit=None):
         if i % 10 == 0:
             print("Progress: {}/{}".format(i * limit, 1000 * limit))
         data = pd.read_csv(
-            "gps_20161101",
+            "./dataset/gps_20161101",
             names=[
                 "driverID",
                 "orderID",
@@ -96,7 +96,7 @@ def generate_info_pickle(start=0, limit=None):
         )
         info = categorize_by_driver(info, data)
     info = dict(info)
-    with open('info.pickle', 'wb') as f:
+    with open('./dataset/info.pickle', 'wb') as f:
         pickle.dump(info, f)
     return info
 
@@ -106,7 +106,7 @@ def generate_driver_pickle(start=0, limit=None):
     for data in read_cache_csv():
         info = categorize_by_driver(info, data, with_street=True)
     info = dict(info)
-    with open('driver.pickle', 'wb') as f:
+    with open('./dataset/driver.pickle', 'wb') as f:
         pickle.dump(info, f)
     return info
 
@@ -116,14 +116,14 @@ def generate_street_pickle(start=0, limit=None):
     for data in read_cache_csv():
         info = categorize_by_street(info, data)
     info = dict(info)
-    with open('street.pickle', 'wb') as f:
+    with open('./dataset/street.pickle', 'wb') as f:
         pickle.dump(info, f)
     return info
 
 
 def load_info_pickle():
-    if os.path.exists("./info.pickle"):
-        with open('info.pickle', 'rb') as f:
+    if os.path.exists("./dataset/info.pickle"):
+        with open('./dataset/info.pickle', 'rb') as f:
             info = pickle.load(f)
     else:
         info = generate_info_pickle()
@@ -131,8 +131,8 @@ def load_info_pickle():
 
 
 def load_driver_pickle():
-    if os.path.exists("./driver.pickle"):
-        with open('driver.pickle', 'rb') as f:
+    if os.path.exists("./dataset/driver.pickle"):
+        with open('./dataset/driver.pickle', 'rb') as f:
             info = pickle.load(f)
     else:
         info = generate_driver_pickle()
@@ -140,8 +140,8 @@ def load_driver_pickle():
 
 
 def load_street_pickle():
-    if os.path.exists("./street.pickle"):
-        with open('street.pickle', 'rb') as f:
+    if os.path.exists("./dataset/street.pickle"):
+        with open('./dataset/street.pickle', 'rb') as f:
             info = pickle.load(f)
     else:
         info = generate_street_pickle()
